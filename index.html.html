@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор объёма позиции</title>
+<style>
+  :root {
+    --bg: #0B0D10;
+    --surface: #14171B;
+    --surface-raised: #191D22;
+    --border: #262A31;
+    --text: #E6E8EB;
+    --text-dim: #868D99;
+    --text-faint: #565D69;
+    --profit: #3ECF7E;
+    --accent: #6E8FCC;
+    --mono: "SFMono-Regular", Consolas, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px;
+  }
+  h1 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-bottom: 24px;
+  }
+  .field {
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .input-wrap {
+    position: relative;
+  }
+  input {
+    width: 100%;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 10px 34px 10px 12px;
+    font-size: 15px;
+    font-family: var(--mono);
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .unit {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--text-faint);
+    font-family: var(--mono);
+  }
+  .result {
+    margin-top: 24px;
+    padding: 18px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .result-label {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .result-value {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--profit);
+    letter-spacing: -0.02em;
+  }
+  .result-note {
+    font-size: 11.5px;
+    color: var(--text-faint);
+    margin-top: 6px;
+    font-family: var(--mono);
+  }
+  .error {
+    color: #E5484D;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Объём позиции</h1>
+  <div class="sub">Расчёт по риску и размеру стопа</div>
+
+  <div class="field">
+    <label>Депозит</label>
+    <div class="input-wrap">
+      <input type="number" id="deposit" value="1000" step="any" inputmode="decimal">
+      <span class="unit">$</span>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Риск на сделку</label>
+    <div class="input-wrap">
+      <input type="number" id="risk" value="1" step="any" inputmode="decimal">
+      <span class="unit">%</span>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Стоп-лосс</label>
+    <div class="input-wrap">
+      <input type="number" id="stop" value="2" step="any" inputmode="decimal">
+      <span class="unit">%</span>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="result-label">Объём позиции</div>
+    <div class="result-value" id="output">—</div>
+    <div class="result-note" id="note"></div>
+    <div class="error" id="error"></div>
+  </div>
+</div>
+
+<script>
+  const depositEl = document.getElementById('deposit');
+  const riskEl = document.getElementById('risk');
+  const stopEl = document.getElementById('stop');
+  const outputEl = document.getElementById('output');
+  const noteEl = document.getElementById('note');
+  const errorEl = document.getElementById('error');
+
+  function fmt(n) {
+    return n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function calculate() {
+    const deposit = parseFloat(depositEl.value);
+    const risk = parseFloat(riskEl.value);
+    const stop = parseFloat(stopEl.value);
+
+    errorEl.textContent = '';
+
+    if (isNaN(deposit) || isNaN(risk) || isNaN(stop) || deposit <= 0 || risk <= 0 || stop <= 0) {
+      outputEl.textContent = '—';
+      noteEl.textContent = '';
+      return;
+    }
+
+    const riskAmount = deposit * (risk / 100);
+    const positionSize = riskAmount / (stop / 100);
+
+    outputEl.textContent = fmt(positionSize) + ' $';
+    noteEl.textContent = 'Риск в деньгах: ' + fmt(riskAmount) + ' $ · плечо к депозиту: x' + (positionSize / deposit).toFixed(2);
+  }
+
+  [depositEl, riskEl, stopEl].forEach(el => el.addEventListener('input', calculate));
+  calculate();
+</script>
+
+</body>
+</html>
